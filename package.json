@@ -20,12 +20,17 @@
     "test:coverage": "vitest run --coverage",
     "test:browser": "cypress run",
     "test": "test:unit && test:browser",
-    "cy": "cypress open"
+    "cy": "cypress open",
+    "pages:dev": "wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-01-04",
+    "pages:deploy": "yarn build && wrangler pages deploy .svelte-kit/cloudflare",
+    "pages:build": "PYTHON=python3 yarn svelte-kit sync && yarn build",
+    "pages:preview": "wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-01-04 --port 8788",
+    "rebuild": "node-gyp rebuild"
   },
   "devDependencies": {
     "@cypress/snapshot": "2.1.7",
     "@fortawesome/fontawesome-free": "^6.5.1",
-    "@sveltejs/adapter-static": "3.0.6",
+    "@sveltejs/adapter-cloudflare": "^4.1.0",
     "@sveltejs/kit": "2.8.1",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -57,6 +62,7 @@
     "husky": "^8.0.3",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.0",
+    "node-gyp": "^9.0.0",
     "node-html-parser": "^6.1.5",
     "postcss": "^8.4.33",
     "postcss-load-config": "5.1.0",
@@ -71,7 +77,6 @@
     "vite": "^5.4.4",
     "vitest": "^2.1.4",
     "vitest-dom": "^0.1.1",
-    "@sveltejs/adapter-cloudflare": "^4.1.0",
     "wrangler": "^3.22.3"
   },
   "dependencies": {
@@ -98,10 +103,10 @@
     ]
   },
   "volta": {
-    "node": "18.20.5",
-    "yarn": "1.22.22"
+    "node": "18.20.5"
   },
   "engines": {
-    "node": ">=16.7"
+    "node": ">=16.7",
+    "yarn": ">=3.6.3"
   }
 }
