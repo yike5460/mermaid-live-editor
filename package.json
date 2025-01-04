@@ -70,7 +70,8 @@
     "vite": "^5.4.4",
     "vitest": "^2.1.4",
     "vitest-dom": "^0.1.1",
-    "@sveltejs/adapter-cloudflare": "^4.1.0"
+    "@sveltejs/adapter-cloudflare": "^4.1.0",
+    "wrangler": "^3.22.3"
   },
   "dependencies": {
     "@mermaid-js/layout-elk": "^0.1.4",
