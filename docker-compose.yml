@@ -7,5 +7,6 @@ services:
     volumes:
       - ./src:/app/src
     ports:
-      - 3000:3000
+      # Maps host port 3008 to container port 3000
+      - 3008:3008
       - 24678:24678
