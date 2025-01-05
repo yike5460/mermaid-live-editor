@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { stateStore, updateCodeStore } from '$lib/util/state';
+  import { updateCodeStore } from '$lib/util/state';
   import { syncDiagram } from '$lib/util/util';
   
   let prompt = '';
@@ -34,9 +34,9 @@
 
 <div class="flex h-full flex-col gap-4 p-4">
   <div class="flex flex-col gap-2">
-    <label for="prompt" class="text-sm font-medium">Describe your diagram</label>
+    <label for="prompt-input" class="text-sm font-medium">Describe your diagram</label>
     <textarea
-      id="prompt"
+      id="prompt-input"
       bind:value={prompt}
       class="textarea textarea-bordered h-24 w-full"
       placeholder="Describe the diagram you want to create in natural language..."
@@ -57,16 +57,18 @@
   {#if generatedCode}
     <div class="flex flex-col gap-2">
       <div class="flex items-center justify-between">
-        <label class="text-sm font-medium">Generated Mermaid Code</label>
+        <label for="generated-code" class="text-sm font-medium">Generated Mermaid Code</label>
         <button
           class="btn btn-ghost btn-sm"
           on:click={copyToClipboard}
           title="Copy to clipboard"
+          aria-label="Copy generated code to clipboard"
         >
           <i class="fas fa-copy"></i>
         </button>
       </div>
       <textarea
+        id="generated-code"
         class="textarea textarea-bordered h-48 w-full font-mono"
         readonly
         value={generatedCode}
