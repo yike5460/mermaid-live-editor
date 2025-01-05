@@ -12,6 +12,7 @@
   import { inputStateStore, stateStore, updateCodeStore } from '$lib/util/state';
   import { cmdKey, initHandler, MCBaseURL, syncDiagram } from '$lib/util/util';
   import { onMount } from 'svelte';
+  import AIEditor from '$lib/components/AIEditor.svelte';
 
   const docURLBase = 'https://mermaid.js.org';
   const docMap: DocumentationConfig = {
@@ -96,7 +97,7 @@
   });
 
   const tabSelectHandler = (tab: Tab) => {
-    const editorMode: EditorMode = tab.id === 'code' ? 'code' : 'config';
+    const editorMode: EditorMode = tab.id === 'code' ? 'code' : tab.id === 'config' ? 'config' : 'ai';
     updateCodeStore({ editorMode });
   };
 
@@ -110,6 +111,11 @@
       id: 'config',
       title: 'Config',
       icon: 'fas fa-cogs'
+    },
+    {
+      id: 'ai',
+      title: 'AI',
+      icon: 'fas fa-magic'
     }
   ];
 
@@ -176,7 +182,11 @@
           </div>
         {/snippet}
 
-        <Editor />
+        {#if activeTabID === 'ai'}
+          <AIEditor />
+        {:else}
+          <Editor />
+        {/if}
       </Card>
 
       <div class="-mt-2">
