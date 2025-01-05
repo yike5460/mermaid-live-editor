@@ -1,6 +1,6 @@
 {
-	"short_name": "Mermaid",
-	"name": "Mermaid Live Editor",
+	"short_name": "Mermaid Viz",
+	"name": "Mermaid Viz - Online Diagram Editor",
 	"icons": [
 		{
 			"src": "/favicon.png",
@@ -13,6 +13,6 @@
 	"display": "standalone",
 	"scope": "/edit",
 	"theme_color": "#6366F1",
-	"description": "FlowChart & Diagrams Editor.",
+	"description": "Online Diagram Editor for creating flowcharts and diagrams.",
 	"orientation": "landscape"
 }

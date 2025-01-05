@@ -13,8 +13,6 @@
 
   let { children }: Props = $props();
 
-  // This can be removed once https://github.com/sveltejs/kit/issues/1612 is fixed.
-  // Then move it into src and vite will bundle it automatically.
   onMount(() => {
     window.addEventListener('hashchange', () => {
       void initHandler();
@@ -32,10 +30,9 @@
         });
     }
 
-    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
+    // Set default theme to corporate
     if ($themeStore.theme === undefined) {
-      setTheme(isDarkMode ? 'dark' : 'light');
+      setTheme('corporate');
     }
 
     themeStore.subscribe(({ theme, isDark }) => {

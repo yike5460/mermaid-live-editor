@@ -71,4 +71,7 @@ fi
 
 echo -e "${YELLOW}🚀 Starting local development server...${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}"
-yarn pages:dev 
+yarn pages:dev
+
+# Run command below for a quick start
+# yarn dev --host --port 3000

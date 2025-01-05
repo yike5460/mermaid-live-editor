@@ -9,17 +9,13 @@
 <script lang="ts">
   import { env } from '$lib/util/env';
   import { dismissPromotion, getActivePromotion } from '$lib/util/promos/promo';
-  import { stateStore } from '$lib/util/state';
-  import { MCBaseURL } from '$lib/util/util';
+  import { themeStore } from '$lib/util/theme';
+  import { toggleDarkTheme } from '$lib/util/state';
   import type { ComponentProps } from 'svelte';
   import DropdownNavMenu from './DropdownNavMenu.svelte';
-  import Privacy from './Privacy.svelte';
   import Theme from './Theme.svelte';
 
-  const { isEnabledMermaidChartLinks } = env;
-
   let isMenuOpen = $state(false);
-  const isReferral = document.referrer.includes(MCBaseURL);
   function toggleMenu() {
     isMenuOpen = !isMenuOpen;
   }
@@ -27,24 +23,7 @@
   type Links = ComponentProps<typeof DropdownNavMenu>['links'];
 
   const githubLinks: Links = [
-    { title: 'Mermaid JS', href: 'https://github.com/mermaid-js/mermaid' },
-    {
-      title: 'Mermaid Live Editor',
-      href: 'https://github.com/mermaid-js/mermaid-live-editor'
-    },
-    {
-      title: 'Mermaid CLI',
-      href: 'https://github.com/mermaid-js/mermaid-cli'
-    }
-  ];
-
-  const documentationLinks: Links = [
-    { title: 'Getting started', href: 'https://mermaid.js.org/intro/getting-started.html' },
-    { title: 'Tutorials', href: 'https://mermaid.js.org/ecosystem/tutorials.html' },
-    {
-      title: 'Integrations',
-      href: 'https://mermaid.js.org/ecosystem/integrations-community.html'
-    }
+    { title: 'Repository', href: 'https://github.com/example/repo' }
   ];
 
   let activePromotion = $state(getActivePromotion());
@@ -67,7 +46,8 @@
       role="button"
       tabindex="0"
       onclick={trackBannerClick}
-      onkeypress={trackBannerClick}>
+      onkeypress={trackBannerClick}
+      aria-label="Promotion banner">
       <activePromotion.component />
     </div>
     <button
@@ -78,70 +58,55 @@
         dismissPromotion(activePromotion?.id);
         activePromotion = undefined;
       }}>
-      <i class="fa fa-close px-2"></i>
+      <i class="fa fa-close px-2" aria-hidden="true"></i>
     </button>
   </div>
 {/if}
 
 <div class="navbar z-50 bg-primary p-0 shadow-lg">
   <div class="mx-2 flex flex-1 gap-2 px-2">
-    <a href="/"><img class="size-6" src="./favicon.svg" alt="Mermaid Live Editor" /></a>
-    <div
-      id="switcher"
-      class="flex items-center justify-center gap-2 font-bold"
-      class:flex-row-reverse={isReferral}>
-      <a href="/">
-        {#if !isReferral}
-          Mermaid
-        {/if}
-        Live Editor
-      </a>
-      {#if isEnabledMermaidChartLinks}
-        <input
-          type="checkbox"
-          class="toggle toggle-primary"
-          id="editorMode"
-          checked={isReferral}
-          onclick={() => {
-            logEvent('playgroundToggle', { isReferred: isReferral });
-            window.open(
-              `${MCBaseURL}/play#${$stateStore.serialized}`,
-              '_self',
-              // Do not send referrer header, if the user already came from playground
-              isReferral ? 'noreferrer' : ''
-            );
-          }} />
-        <a href="{MCBaseURL}/play#{$stateStore.serialized}">Playground</a>
-      {/if}
+    <a href="/" class="flex items-center" aria-label="Home">
+      <i class="fas fa-code-branch text-2xl text-gradient-primary" aria-hidden="true"></i>
+    </a>
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center gap-2 font-bold">
+        <a href="/" class="text-xl">Mermaid Viz</a>
+      </div>
+      <div class="text-gradient-animate text-sm font-medium">
+        Tool to visualize your Mermaid diagrams
+      </div>
     </div>
   </div>
 
   <label
     for="menu-toggle"
-    class={isMenuOpen ? 'hidden' : 'pointer-cursor fixed right-4 z-[1000] lg:hidden'}>
+    class={isMenuOpen ? 'hidden' : 'pointer-cursor fixed right-4 z-[1000] lg:hidden'}
+    aria-label="Open menu">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       class="fill-current"
       width="20"
       height="20"
-      viewBox="0 0 20 20">
+      viewBox="0 0 20 20"
+      aria-hidden="true">
       <title>Menu</title>
       <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
     </svg>
   </label>
 
-  <!-- Cross SVG -->
   <label
     for="menu-toggle"
-    class={isMenuOpen ? 'pointer-cursor fixed right-4 z-[1000] lg:hidden' : 'hidden'}>
+    class={isMenuOpen ? 'pointer-cursor fixed right-4 z-[1000] lg:hidden' : 'hidden'}
+    aria-label="Close menu">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       class="fill-current"
       width="20"
       height="20"
-      viewBox="0 0 20 20">
+      viewBox="0 0 20 20"
+      aria-hidden="true">
       <title>Cross</title>
       <line x1="5" y1="5" x2="15" y2="15" stroke="white" stroke-width="2" />
       <line x1="5" y1="15" x2="15" y2="5" stroke="white" stroke-width="2" />
@@ -156,28 +121,13 @@
     onclick={toggleMenu} />
 
   <div class="hidden w-full lg:flex lg:w-auto lg:items-center" id="menu">
-    <span class="text-sm">v{version}</span>
     <ul class="items-center justify-between pt-4 text-base lg:flex lg:pt-0">
-      <li>
-        <Privacy />
-      </li>
       <li>
         <Theme />
       </li>
       <li>
-        <DropdownNavMenu label="Documentation" links={documentationLinks} />
-      </li>
-      <li>
         <DropdownNavMenu icon="fab fa-github fa-lg" links={githubLinks} />
       </li>
-
-      {#if isEnabledMermaidChartLinks}
-        <li>
-          <a class="btn btn-ghost" target="_blank" href="https://mermaidchart.com">
-            <img class="size-6" src="./mermaidchart-logo.svg" alt="Mermaid Chart" />
-          </a>
-        </li>
-      {/if}
     </ul>
   </div>
 </div>
@@ -189,5 +139,35 @@
     padding: 1rem 0;
     background: #661ae6;
     display: flex;
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(45deg, #4f46e5, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-animate {
+    background: linear-gradient(
+      45deg,
+      #4f46e5 0%,
+      #06b6d4 25%,
+      #8b5cf6 50%,
+      #06b6d4 75%,
+      #4f46e5 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 3s linear infinite;
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
   }
 </style>

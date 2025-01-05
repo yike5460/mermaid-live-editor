@@ -143,32 +143,9 @@ ${svgString}`);
     });
   };
 
-  const onCopyMarkdown = () => {
-    document.querySelector<HTMLInputElement>('#markdown')?.select();
-    document.execCommand('Copy');
-    logEvent('copyMarkdown');
-  };
-
-  let gistURL = $state('');
-  stateStore.subscribe(({ loader }) => {
-    if (loader?.type === 'gist') {
-      // @ts-expect-error Gist will have url
-      gistURL = loader.config.url;
-    }
-  });
-
-  const loadGist = () => {
-    if (!gistURL) {
-      alert('Please enter a Gist URL first');
-    }
-    window.location.href = `${window.location.pathname}?gist=${gistURL}`;
-    logEvent('loadGist');
-  };
-
   let iUrl: string | undefined = $state();
   let svgUrl: string | undefined = $state();
   let krokiUrl: string | undefined = $state();
-  let mdCode: string | undefined = $state();
   let imagemodeselected = $state('auto');
   let userimagesize = $state(1080);
 
@@ -180,7 +157,6 @@ ${svgString}`);
     iUrl = `${rendererUrl}/img/${serialized}?type=png`;
     svgUrl = `${rendererUrl}/svg/${serialized}`;
     krokiUrl = `${krokiRendererUrl}/mermaid/svg/${pakoSerde.serialize(code)}`;
-    mdCode = `[![](${iUrl})](${window.location.protocol}//${window.location.host}${window.location.pathname}#${serialized})`;
   });
 </script>
 
@@ -242,28 +218,6 @@ ${svgString}`);
       {/if}
     </div>
 
-    {#if rendererUrl}
-      <div class="flex w-full items-center gap-2">
-        <input class="input" id="markdown" type="text" value={mdCode} onclick={onCopyMarkdown} />
-        <label for="markdown">
-          <button class="btn btn-primary btn-md flex-auto" onclick={onCopyMarkdown}>
-            Copy Markdown
-          </button>
-        </label>
-      </div>
-    {/if}
-
-    <div class="flex w-full items-center gap-2">
-      <input
-        class="input"
-        id="gist"
-        type="text"
-        bind:value={gistURL}
-        placeholder="Enter Gist URL" />
-      <label for="gist">
-        <button class="btn btn-primary btn-md flex-auto" onclick={loadGist}> Load Gist </button>
-      </label>
-    </div>
     {#if isNetlify}
       <div class="flex w-full items-center justify-center">
         <a class="link text-sm text-gray-500 underline" href="https://netlify.com">
@@ -273,3 +227,9 @@ ${svgString}`);
     {/if}
   </div>
 </Card>
+
+<style>
+  .action-btn {
+    @apply btn btn-primary btn-sm;
+  }
+</style>
