@@ -14,3 +14,10 @@ yarn-error.log
 /cypress/screenshots
 .env.local
 .wrangler/
+
+# Yarn
+.yarn/install-state.gz
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.pnp.*

@@ -10,3 +10,6 @@ MERMAID_DOMAIN = "mermaid.live"
 MERMAID_RENDERER_URL = "https://mermaid.ink"
 MERMAID_KROKI_RENDERER_URL = "https://kroki.io"
 MERMAID_IS_ENABLED_MERMAID_CHART_LINKS = "true" 
+
+[ai]
+binding = "AI" 

@@ -5,23 +5,44 @@
   let prompt = '';
   let generatedCode = '';
   let isGenerating = false;
+  let error = '';
 
   async function generateDiagram() {
     isGenerating = true;
+    error = '';
+    
     try {
-      // TODO: Replace with actual AI API call
-      // For now, just create a simple flowchart as an example
-      generatedCode = `flowchart TD
-    A[Start] --> B{Is it?}
-    B -- Yes --> C[OK]
-    C --> D[Rethink]
-    D --> B
-    B -- No --> E[End]`;
+      const systemPrompt = `You are a Mermaid diagram expert. Convert the user's natural language description into a valid Mermaid diagram code.
+Follow these rules:
+1. Only output valid Mermaid syntax
+2. Do not include any explanations or markdown formatting
+3. Include all necessary diagram type declarations (e.g. flowchart TD, sequenceDiagram, etc.)
+4. Use appropriate Mermaid features like styling, labels, and formatting for clarity
+5. Ensure the diagram is readable and well-structured`;
+
+      const response = await fetch('/api/generate-diagram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          systemPrompt
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate diagram');
+      }
+
+      const result = await response.json();
+      generatedCode = result.mermaidCode;
       
       updateCodeStore({ code: generatedCode });
       await syncDiagram();
-    } catch (error) {
-      console.error('Error generating diagram:', error);
+    } catch (err) {
+      console.error('Error generating diagram:', err);
+      error = err.message || 'Failed to generate diagram. Please try again.';
     } finally {
       isGenerating = false;
     }
@@ -39,7 +60,7 @@
       id="prompt-input"
       bind:value={prompt}
       class="textarea textarea-bordered h-24 w-full"
-      placeholder="Describe the diagram you want to create in natural language..."
+      placeholder="Describe the diagram you want to create in natural language. For example: 'Create a flowchart showing the user registration process with email verification'"
     ></textarea>
     <button
       class="btn btn-primary w-full"
@@ -52,6 +73,9 @@
         Generate Diagram
       {/if}
     </button>
+    {#if error}
+      <div class="text-error text-sm mt-2">{error}</div>
+    {/if}
   </div>
 
   {#if generatedCode}
