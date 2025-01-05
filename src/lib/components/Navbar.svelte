@@ -7,10 +7,8 @@
 </script>
 
 <script lang="ts">
-  import { env } from '$lib/util/env';
   import { dismissPromotion, getActivePromotion } from '$lib/util/promos/promo';
   import { themeStore } from '$lib/util/theme';
-  import { toggleDarkTheme } from '$lib/util/state';
   import type { ComponentProps } from 'svelte';
   import DropdownNavMenu from './DropdownNavMenu.svelte';
   import Theme from './Theme.svelte';
