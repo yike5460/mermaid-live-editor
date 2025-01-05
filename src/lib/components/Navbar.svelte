@@ -21,7 +21,7 @@
   type Links = ComponentProps<typeof DropdownNavMenu>['links'];
 
   const githubLinks: Links = [
-    { title: 'Repository', href: 'https://github.com/example/repo' }
+    { title: 'Repository', href: 'https://github.com/yike5460' }
   ];
 
   let activePromotion = $state(getActivePromotion());
@@ -64,7 +64,12 @@
 <div class="navbar z-50 bg-primary p-0 shadow-lg">
   <div class="mx-2 flex flex-1 gap-2 px-2">
     <a href="/" class="flex items-center" aria-label="Home">
-      <i class="fas fa-code-branch text-2xl text-gradient-primary" aria-hidden="true"></i>
+      <div class="swimming-fish">
+        <div class="fish-body">
+          <div class="fish-back-fin"></div>
+          <div class="fish-mouth"></div>
+        </div>
+      </div>
     </a>
     <div class="flex flex-col">
       <div class="flex items-center justify-center gap-2 font-bold">
@@ -129,7 +134,6 @@
     </ul>
   </div>
 </div>
-
 <style>
   #menu-toggle:checked + #menu {
     position: absolute;
@@ -168,4 +172,80 @@
       background-position: 200% center;
     }
   }
+
+  .swimming-fish {
+    position: relative;
+    width: 1.8rem;
+    height: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Fish body container for unified animation */
+  .fish-body {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    animation: swim 3s ease-in-out infinite;
+  }
+
+  /* Chubby fish body */
+  .fish-body::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4f46e5 20%, #06b6d4 90%);
+    border-radius: 65% 35% 35% 65%;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+  }
+
+  /* Cute tail */
+  .swimming-fish::after {
+    content: '';
+    position: absolute;
+    right: -15%;
+    width: 35%;
+    height: 70%;
+    background: linear-gradient(135deg, #4f46e5 20%, #06b6d4 90%);
+    border-radius: 40% 50% 50% 40%;
+    transform-origin: left center;
+    animation: wagTail 3s ease-in-out infinite;
+  }
+
+  /* Simple mouth edge */
+  .fish-mouth {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    left: 22%;
+    top: 45%;
+    z-index: 1;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    transform: rotate(-35deg);
+  }
+
+  /* Simple wave effect */
+  @keyframes swim {
+    0%, 100% {
+      transform: translateY(0) rotate(-5deg);
+    }
+    50% {
+      transform: translateY(-2px) rotate(0deg);
+    }
+  }
+
+  @keyframes wagTail {
+    0%, 100% {
+      transform: rotate(-10deg) scaleX(0.8);
+    }
+    50% {
+      transform: rotate(10deg) scaleX(1);
+    }
+  }
 </style>
+

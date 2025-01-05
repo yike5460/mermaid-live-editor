@@ -40,9 +40,9 @@ Follow these rules:
       
       updateCodeStore({ code: generatedCode });
       await syncDiagram();
-    } catch (err) {
-      console.error('Error generating diagram:', err);
-      error = err.message || 'Failed to generate diagram. Please try again.';
+    } catch (error_) {
+      console.error('Error generating diagram:', error_);
+      error = error_.message || 'Failed to generate diagram. Please try again.';
     } finally {
       isGenerating = false;
     }
@@ -52,6 +52,30 @@ Follow these rules:
     navigator.clipboard.writeText(generatedCode);
   }
 </script>
+
+<style>
+  @keyframes swim {
+    0% {
+      transform: translateX(-3px) rotate(-5deg);
+    }
+    50% {
+      transform: translateX(3px) rotate(5deg);
+    }
+    100% {
+      transform: translateX(-3px) rotate(-5deg);
+    }
+  }
+
+  .swimming-mermaid {
+    animation: swim 1.5s ease-in-out infinite;
+    display: inline-block;
+  }
+
+  .swimming-mermaid i {
+    color: #fff;
+    font-size: 1.2em;
+  }
+</style>
 
 <div class="flex h-full flex-col gap-4 p-4">
   <div class="flex flex-col gap-2">
@@ -68,7 +92,10 @@ Follow these rules:
       disabled={!prompt || isGenerating}
     >
       {#if isGenerating}
-        <span class="loading loading-spinner"></span>
+        <span class="swimming-mermaid">
+          <i class="fas fa-fish"></i>
+        </span>
+        <span class="ml-2">Generating...</span>
       {:else}
         Generate Diagram
       {/if}
