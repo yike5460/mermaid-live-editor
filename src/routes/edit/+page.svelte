@@ -229,15 +229,6 @@
               class="btn btn-secondary btn-xs gap-1"
               title="View diagram in new page"
               ><i class="fas fa-external-link-alt"></i>Full screen</a>
-            {#if env.isEnabledMermaidChartLinks}
-              <a
-                href={`${MCBaseURL}/app/plugin/save?state=${$stateStore.serialized}`}
-                target="_blank"
-                class="btn btn-secondary btn-xs gap-1 bg-[#FF3570]"
-                title="Save diagram in Mermaid Chart"
-                ><img src="./mermaidchart-logo.svg" class="h-5 w-5" alt="Mermaid chart logo" />Save
-                to Mermaid Chart</a>
-            {/if}
           </div>
         {/snippet}
 
