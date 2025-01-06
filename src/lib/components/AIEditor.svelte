@@ -10,6 +10,43 @@
   let syntaxError = '';
   let showCopyHint = false;
   let copyHintTimeout: number;
+  let retryCount = 0;
+  let autoCorrection = true;
+  const maxRetries = 5;
+  const humorousMessages = [
+    "Oops! I burned the toast. Let me try again...",
+    "My mermaid got tangled! Untangling...",
+    "That diagram was fishy. One more swim...",
+    "The mermaid needs coffee! Brewing...",
+    "Last dive for pearls of wisdom..."
+  ];
+  const successMessages = [
+    "Fixed it! The mermaid is swimming smoothly now 🐠",
+    "Untangled successfully! Your diagram is ready 🎨",
+    "All better now! The diagram looks great 🌟",
+    "Perfect brew! Your diagram is served ☕",
+    "Found the pearl! Your diagram shines ✨"
+  ];
+  let successMessage = '';
+  let showSuccessMessage = false;
+  let successMessageTimeout: number;
+
+  function showTemporarySuccessMessage(index: number) {
+    // Clear any existing error
+    error = '';
+    // Show success message
+    successMessage = successMessages[Math.min(index, successMessages.length - 1)];
+    showSuccessMessage = true;
+    // Clear any existing timeout
+    if (successMessageTimeout) {
+      clearTimeout(successMessageTimeout);
+    }
+    // Hide after 3 seconds
+    successMessageTimeout = window.setTimeout(() => {
+      showSuccessMessage = false;
+      successMessage = '';
+    }, 3000);
+  }
 
   async function validateMermaidSyntax(code: string): Promise<boolean> {
     try {
@@ -26,6 +63,10 @@
     isGenerating = true;
     error = '';
     syntaxError = '';
+    retryCount = 0;
+    showSuccessMessage = false;
+    successMessage = '';
+    let lastErrorContext = '';
     
     try {
       const systemPrompt = `You are a Mermaid diagram expert. Convert the user's natural language description into a valid Mermaid diagram code.
@@ -34,32 +75,117 @@ Follow these rules:
 2. Do not include any explanations or markdown formatting
 3. Include all necessary diagram type declarations (e.g. flowchart TD, sequenceDiagram, etc.)
 4. Use appropriate Mermaid features like styling, labels, and formatting for clarity
-5. Ensure the diagram is readable and well-structured`;
+5. Ensure the diagram is readable and well-structured
+${lastErrorContext}`;
 
-      const response = await fetch('/api/generate-diagram', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          systemPrompt
-        })
-      });
+      async function attemptGeneration(): Promise<string> {
+        const response = await fetch('/api/generate-diagram', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: retryCount === 0 ? prompt : `Fix this Mermaid syntax error:
+Original Code:
+${generatedCode}
 
-      if (!response.ok) {
-        throw new Error('Failed to generate diagram');
+Error Message:
+${syntaxError}
+
+Please fix the syntax error and return only the corrected code.`,
+            systemPrompt
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate diagram');
+        }
+
+        const result = await response.json();
+        let code = result.mermaidCode;
+
+        // Post-process the code to extract pure Mermaid syntax
+        // Clean up any markdown code blocks first
+        code = code.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '');
+
+        // Remove any explanatory text before the diagram type declaration
+        const diagramTypes = ['flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'gantt', 'pie', 'graph', 'erDiagram', 'journey', 'gitGraph', 'mindmap'];
+        
+        // Find the first occurrence of any diagram type
+        let firstTypeIndex = -1;
+        let foundType = '';
+        for (const type of diagramTypes) {
+          const typeIndex = code.toLowerCase().indexOf(type.toLowerCase());
+          if (typeIndex !== -1 && (firstTypeIndex === -1 || typeIndex < firstTypeIndex)) {
+            firstTypeIndex = typeIndex;
+            foundType = type;
+          }
+        }
+
+        if (firstTypeIndex !== -1) {
+          code = code.substring(firstTypeIndex);
+          
+          // Remove any subsequent redundant diagram type declarations
+          const lines = code.split('\n');
+          const firstLine = lines[0]; // Keep the first diagram type declaration
+          
+          // Filter out any lines that are just diagram type declarations
+          const filteredLines = [firstLine];
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            const isJustDiagramType = diagramTypes.some(type => {
+              const typePattern = new RegExp(`^${type}\\s*(TD|LR|RL|BT|TB)?$`, 'i');
+              return typePattern.test(line);
+            });
+            
+            if (!isJustDiagramType) {
+              filteredLines.push(lines[i]);
+            }
+          }
+          code = filteredLines.join('\n');
+        }
+
+        // Remove any trailing explanations or notes
+        code = code.split('\n').filter(line => {
+          const trimmed = line.trim();
+          return trimmed && !trimmed.startsWith('Here is') && !trimmed.startsWith('This is') && !trimmed.startsWith('I have') && !trimmed.startsWith('Now the');
+        }).join('\n');
+        
+        return code.trim();
       }
 
-      const result = await response.json();
-      generatedCode = result.mermaidCode;
-      
-      // Validate syntax before updating preview
-      const isValid = await validateMermaidSyntax(generatedCode);
-      if (isValid) {
-        updateCodeStore({ code: generatedCode });
-        await syncDiagram();
-      }
+      do {
+        generatedCode = await attemptGeneration();
+        const isValid = await validateMermaidSyntax(generatedCode);
+        
+        if (isValid) {
+          updateCodeStore({ code: generatedCode });
+          await syncDiagram();
+          if (retryCount > 0) {
+            showTemporarySuccessMessage(retryCount - 1);
+          }
+          break;
+        }
+        
+        // If auto-correction is disabled, break after first attempt
+        if (!autoCorrection) {
+          error = "Syntax error detected. Enable auto-correction to automatically fix errors.";
+          break;
+        }
+        
+        lastErrorContext = `Previous attempt ${retryCount + 1} failed with error: ${syntaxError}
+Generated code was:
+${generatedCode}`;
+        
+        if (retryCount < maxRetries - 1) {
+          error = '';
+        } else {
+          error = "I've tried my best but still got syntax errors. You might need to adjust the code manually.";
+          break;
+        }
+        retryCount++;
+      } while (retryCount < maxRetries);
+
     } catch (error_) {
       console.error('Error generating diagram:', error_);
       error = error_.message || 'Failed to generate diagram. Please try again.';
@@ -240,11 +366,38 @@ Follow these rules:
     background: inherit;
     transform: rotate(45deg);
   }
+
+  .success-message {
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+  }
+
+  .success-message.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
 
 <div class="flex h-full flex-col gap-4 p-4">
   <div class="flex flex-col gap-2">
-    <label for="prompt-input" class="text-sm font-medium">Describe your diagram</label>
+    <div class="flex items-center justify-between mb-2">
+      <label for="prompt-input" class="text-sm font-medium">Describe your diagram</label>
+      <label class="cursor-pointer flex items-center gap-2">
+        <span class="text-sm text-gray-600">Auto-correction</span>
+        <input
+          type="checkbox"
+          class="toggle toggle-primary toggle-sm"
+          bind:checked={autoCorrection}
+        />
+      </label>
+    </div>
     <textarea
       id="prompt-input"
       bind:value={prompt}
@@ -260,13 +413,28 @@ Follow these rules:
         <span class="swimming-mermaid">
           <i class="fas fa-fish"></i>
         </span>
-        <span class="ml-2">Generating...</span>
+        <span class="ml-2">
+          {#if retryCount > 0}
+            {humorousMessages[retryCount - 1]}
+          {:else}
+            Generating...
+          {/if}
+        </span>
       {:else}
         Generate Diagram
       {/if}
     </button>
-    {#if error}
-      <div class="text-error text-sm mt-2">{error}</div>
+    {#if showSuccessMessage}
+      <div class="success-message show">
+        <i class="fas fa-check-circle"></i>
+        {successMessage}
+      </div>
+    {/if}
+    {#if error && retryCount >= maxRetries}
+      <div class="text-error text-sm mt-2">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        {error}
+      </div>
     {/if}
   </div>
 
