@@ -2,7 +2,7 @@
   import { updateCodeStore } from '$lib/util/state';
   import { syncDiagram } from '$lib/util/util';
   import mermaid from 'mermaid';
-  
+
   let prompt = '';
   let generatedCode = '';
   let isGenerating = false;
@@ -14,18 +14,18 @@
   let autoCorrection = true;
   const maxRetries = 5;
   const humorousMessages = [
-    "Oops! I burned the toast. Let me try again...",
-    "My mermaid got tangled! Untangling...",
-    "That diagram was fishy. One more swim...",
-    "The mermaid needs coffee! Brewing...",
-    "Last dive for pearls of wisdom..."
+    'Oops! I burned the toast. Let me try again...',
+    'My mermaid got tangled! Untangling...',
+    'That diagram was fishy. One more swim...',
+    'The mermaid needs coffee! Brewing...',
+    'Last dive for pearls of wisdom...'
   ];
   const successMessages = [
-    "Fixed it! The mermaid is swimming smoothly now 🐠",
-    "Untangled successfully! Your diagram is ready 🎨",
-    "All better now! The diagram looks great 🌟",
-    "Perfect brew! Your diagram is served ☕",
-    "Found the pearl! Your diagram shines ✨"
+    'Fixed it! The mermaid is swimming smoothly now 🐠',
+    'Untangled successfully! Your diagram is ready 🎨',
+    'All better now! The diagram looks great 🌟',
+    'Perfect brew! Your diagram is served ☕',
+    'Found the pearl! Your diagram shines ✨'
   ];
   let successMessage = '';
   let showSuccessMessage = false;
@@ -53,8 +53,8 @@
       await mermaid.parse(code);
       syntaxError = '';
       return true;
-    } catch (err) {
-      syntaxError = err.message || 'Invalid Mermaid syntax. Please check your diagram code.';
+    } catch (error_) {
+      syntaxError = error_.message || 'Invalid Mermaid syntax. Please check your diagram code.';
       return false;
     }
   }
@@ -67,7 +67,7 @@
     showSuccessMessage = false;
     successMessage = '';
     let lastErrorContext = '';
-    
+
     try {
       const systemPrompt = `You are a Mermaid diagram expert. Convert the user's natural language description into a valid Mermaid diagram code.
 Follow these rules:
@@ -78,14 +78,17 @@ Follow these rules:
 5. Ensure the diagram is readable and well-structured
 ${lastErrorContext}`;
 
-      async function attemptGeneration(): Promise<string> {
+      const attemptGeneration = async (): Promise<string> => {
         const response = await fetch('/api/generate-diagram', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            prompt: retryCount === 0 ? prompt : `Fix this Mermaid syntax error:
+            prompt:
+              retryCount === 0
+                ? prompt
+                : `Fix this Mermaid syntax error:
 Original Code:
 ${generatedCode}
 
@@ -106,38 +109,48 @@ Please fix the syntax error and return only the corrected code.`,
 
         // Post-process the code to extract pure Mermaid syntax
         // Clean up any markdown code blocks first
-        code = code.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '');
+        code = code.replaceAll(/```mermaid\n?/g, '').replaceAll(/```\n?/g, '');
 
         // Remove any explanatory text before the diagram type declaration
-        const diagramTypes = ['flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'gantt', 'pie', 'graph', 'erDiagram', 'journey', 'gitGraph', 'mindmap'];
-        
+        const diagramTypes = [
+          'flowchart',
+          'sequenceDiagram',
+          'classDiagram',
+          'stateDiagram',
+          'gantt',
+          'pie',
+          'graph',
+          'erDiagram',
+          'journey',
+          'gitGraph',
+          'mindmap'
+        ];
+
         // Find the first occurrence of any diagram type
         let firstTypeIndex = -1;
-        let foundType = '';
         for (const type of diagramTypes) {
           const typeIndex = code.toLowerCase().indexOf(type.toLowerCase());
           if (typeIndex !== -1 && (firstTypeIndex === -1 || typeIndex < firstTypeIndex)) {
             firstTypeIndex = typeIndex;
-            foundType = type;
           }
         }
 
         if (firstTypeIndex !== -1) {
-          code = code.substring(firstTypeIndex);
-          
+          code = code.slice(firstTypeIndex);
+
           // Remove any subsequent redundant diagram type declarations
           const lines = code.split('\n');
           const firstLine = lines[0]; // Keep the first diagram type declaration
-          
+
           // Filter out any lines that are just diagram type declarations
           const filteredLines = [firstLine];
           for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
-            const isJustDiagramType = diagramTypes.some(type => {
+            const isJustDiagramType = diagramTypes.some((type) => {
               const typePattern = new RegExp(`^${type}\\s*(TD|LR|RL|BT|TB)?$`, 'i');
               return typePattern.test(line);
             });
-            
+
             if (!isJustDiagramType) {
               filteredLines.push(lines[i]);
             }
@@ -146,18 +159,27 @@ Please fix the syntax error and return only the corrected code.`,
         }
 
         // Remove any trailing explanations or notes
-        code = code.split('\n').filter(line => {
-          const trimmed = line.trim();
-          return trimmed && !trimmed.startsWith('Here is') && !trimmed.startsWith('This is') && !trimmed.startsWith('I have') && !trimmed.startsWith('Now the');
-        }).join('\n');
-        
+        code = code
+          .split('\n')
+          .filter((line) => {
+            const trimmed = line.trim();
+            return (
+              trimmed &&
+              !trimmed.startsWith('Here is') &&
+              !trimmed.startsWith('This is') &&
+              !trimmed.startsWith('I have') &&
+              !trimmed.startsWith('Now the')
+            );
+          })
+          .join('\n');
+
         return code.trim();
-      }
+      };
 
       do {
         generatedCode = await attemptGeneration();
         const isValid = await validateMermaidSyntax(generatedCode);
-        
+
         if (isValid) {
           updateCodeStore({ code: generatedCode });
           await syncDiagram();
@@ -166,26 +188,26 @@ Please fix the syntax error and return only the corrected code.`,
           }
           break;
         }
-        
+
         // If auto-correction is disabled, break after first attempt
         if (!autoCorrection) {
-          error = "Syntax error detected. Enable auto-correction to automatically fix errors.";
+          error = 'Syntax error detected. Enable auto-correction to automatically fix errors.';
           break;
         }
-        
+
         lastErrorContext = `Previous attempt ${retryCount + 1} failed with error: ${syntaxError}
 Generated code was:
 ${generatedCode}`;
-        
+
         if (retryCount < maxRetries - 1) {
           error = '';
         } else {
-          error = "I've tried my best but still got syntax errors. You might need to adjust the code manually.";
+          error =
+            "I've tried my best but still got syntax errors. You might need to adjust the code manually.";
           break;
         }
         retryCount++;
       } while (retryCount < maxRetries);
-
     } catch (error_) {
       console.error('Error generating diagram:', error_);
       error = error_.message || 'Failed to generate diagram. Please try again.';
@@ -197,7 +219,7 @@ ${generatedCode}`;
   async function handleCodeChange(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
     generatedCode = textarea.value;
-    
+
     // Validate syntax on each change
     const isValid = await validateMermaidSyntax(generatedCode);
     if (isValid) {
@@ -224,41 +246,147 @@ ${generatedCode}`;
     const a = document.createElement('a');
     a.href = url;
     a.download = 'mermaid-diagram.txt';
-    document.body.appendChild(a);
+    document.body.append(a);
     a.click();
     window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    a.remove();
   }
 
-  let downloadBtnClicked = false;
-  let copyBtnClicked = false;
+  let downloadButtonClicked = false;
+  let copyButtonClicked = false;
 
   function handleDownload() {
     saveToLocal();
-    downloadBtnClicked = true;
-    setTimeout(() => downloadBtnClicked = false, 300);
+    downloadButtonClicked = true;
+    setTimeout(() => (downloadButtonClicked = false), 300);
   }
 
   function handleCopy() {
     copyToClipboard();
-    copyBtnClicked = true;
-    
+    copyButtonClicked = true;
+
     // Clear any existing timeout
     if (copyHintTimeout) {
       clearTimeout(copyHintTimeout);
     }
-    
+
     // Show the hint
     showCopyHint = true;
-    
+
     // Hide after 2 seconds
     copyHintTimeout = window.setTimeout(() => {
       showCopyHint = false;
     }, 2000);
-    
-    setTimeout(() => copyBtnClicked = false, 300);
+
+    setTimeout(() => (copyButtonClicked = false), 300);
   }
 </script>
+
+<div class="flex h-full flex-col gap-4 p-4">
+  <div class="flex flex-col gap-2">
+    <div class="mb-2 flex items-center justify-between">
+      <label for="prompt-input" class="text-sm font-medium">Describe your diagram</label>
+      <label class="flex cursor-pointer items-center gap-2">
+        <span class="text-sm text-gray-600">Auto-correction</span>
+        <input
+          type="checkbox"
+          class="toggle toggle-primary toggle-sm"
+          bind:checked={autoCorrection} />
+      </label>
+    </div>
+    <textarea
+      id="prompt-input"
+      bind:value={prompt}
+      class="textarea textarea-bordered h-24 w-full"
+      placeholder="Describe the diagram you want to create in natural language. For example: 'Create a flowchart showing the user registration process with email verification'"
+    ></textarea>
+    <button
+      class="btn btn-primary w-full"
+      on:click={generateDiagram}
+      disabled={!prompt || isGenerating}>
+      {#if isGenerating}
+        <span class="swimming-mermaid">
+          <i class="fas fa-fish"></i>
+        </span>
+        <span class="ml-2">
+          {#if retryCount > 0}
+            {humorousMessages[retryCount - 1]}
+          {:else}
+            Generating...
+          {/if}
+        </span>
+      {:else}
+        Generate Diagram
+      {/if}
+    </button>
+    {#if showSuccessMessage}
+      <div class="success-message show">
+        <i class="fas fa-check-circle"></i>
+        {successMessage}
+      </div>
+    {/if}
+    {#if error && retryCount >= maxRetries}
+      <div class="mt-2 text-sm text-error">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        {error}
+      </div>
+    {/if}
+  </div>
+
+  {#if generatedCode}
+    <div class="flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <label for="generated-code" class="text-sm font-medium">Generated Mermaid Code</label>
+        <div class="relative flex gap-2">
+          <button
+            class="icon-btn download-btn btn btn-ghost btn-sm {downloadButtonClicked
+              ? 'clicked'
+              : ''}"
+            on:click={handleDownload}
+            title="Save to local file"
+            aria-label="Save diagram to local file">
+            <i class="fas fa-cloud-download-alt"></i>
+          </button>
+          <div class="relative">
+            <div class="copy-hint {showCopyHint ? 'show' : ''}">
+              <i class="fas fa-check mr-1"></i>
+              Copied to clipboard!
+            </div>
+            <button
+              class="icon-btn copy-btn btn btn-ghost btn-sm {copyButtonClicked ? 'clicked' : ''}"
+              on:click={handleCopy}
+              title="Copy to clipboard"
+              aria-label="Copy generated code to clipboard">
+              <i class="fas fa-clipboard-check"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <textarea
+        id="generated-code"
+        class="textarea textarea-bordered h-48 w-full font-mono {syntaxError
+          ? 'textarea-error'
+          : ''}"
+        value={generatedCode}
+        on:input={handleCodeChange}
+        placeholder="Generated Mermaid code will appear here. You can edit it if needed."
+      ></textarea>
+      {#if syntaxError}
+        <div class="text-sm text-error">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Syntax Error: {syntaxError}
+          <div class="mt-1 text-xs">
+            Please modify the code to fix the syntax error. The diagram will update automatically
+            when the syntax is valid.
+          </div>
+        </div>
+      {/if}
+      <button class="btn btn-secondary w-full" on:click={handlePreview} disabled={!!syntaxError}>
+        Preview
+      </button>
+    </div>
+  {/if}
+</div>
 
 <style>
   @keyframes swim {
@@ -326,9 +454,15 @@ ${generatedCode}`;
   }
 
   @keyframes pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 
   .icon-btn.clicked {
@@ -384,112 +518,3 @@ ${generatedCode}`;
     transform: translateY(0);
   }
 </style>
-
-<div class="flex h-full flex-col gap-4 p-4">
-  <div class="flex flex-col gap-2">
-    <div class="flex items-center justify-between mb-2">
-      <label for="prompt-input" class="text-sm font-medium">Describe your diagram</label>
-      <label class="cursor-pointer flex items-center gap-2">
-        <span class="text-sm text-gray-600">Auto-correction</span>
-        <input
-          type="checkbox"
-          class="toggle toggle-primary toggle-sm"
-          bind:checked={autoCorrection}
-        />
-      </label>
-    </div>
-    <textarea
-      id="prompt-input"
-      bind:value={prompt}
-      class="textarea textarea-bordered h-24 w-full"
-      placeholder="Describe the diagram you want to create in natural language. For example: 'Create a flowchart showing the user registration process with email verification'"
-    ></textarea>
-    <button
-      class="btn btn-primary w-full"
-      on:click={generateDiagram}
-      disabled={!prompt || isGenerating}
-    >
-      {#if isGenerating}
-        <span class="swimming-mermaid">
-          <i class="fas fa-fish"></i>
-        </span>
-        <span class="ml-2">
-          {#if retryCount > 0}
-            {humorousMessages[retryCount - 1]}
-          {:else}
-            Generating...
-          {/if}
-        </span>
-      {:else}
-        Generate Diagram
-      {/if}
-    </button>
-    {#if showSuccessMessage}
-      <div class="success-message show">
-        <i class="fas fa-check-circle"></i>
-        {successMessage}
-      </div>
-    {/if}
-    {#if error && retryCount >= maxRetries}
-      <div class="text-error text-sm mt-2">
-        <i class="fas fa-exclamation-triangle mr-2"></i>
-        {error}
-      </div>
-    {/if}
-  </div>
-
-  {#if generatedCode}
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center justify-between">
-        <label for="generated-code" class="text-sm font-medium">Generated Mermaid Code</label>
-        <div class="flex gap-2 relative">
-          <button
-            class="btn btn-ghost btn-sm icon-btn download-btn {downloadBtnClicked ? 'clicked' : ''}"
-            on:click={handleDownload}
-            title="Save to local file"
-            aria-label="Save diagram to local file"
-          >
-            <i class="fas fa-cloud-download-alt"></i>
-          </button>
-          <div class="relative">
-            <div class="copy-hint {showCopyHint ? 'show' : ''}">
-              <i class="fas fa-check mr-1"></i>
-              Copied to clipboard!
-            </div>
-            <button
-              class="btn btn-ghost btn-sm icon-btn copy-btn {copyBtnClicked ? 'clicked' : ''}"
-              on:click={handleCopy}
-              title="Copy to clipboard"
-              aria-label="Copy generated code to clipboard"
-            >
-              <i class="fas fa-clipboard-check"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-      <textarea
-        id="generated-code"
-        class="textarea textarea-bordered h-48 w-full font-mono {syntaxError ? 'textarea-error' : ''}"
-        value={generatedCode}
-        on:input={handleCodeChange}
-        placeholder="Generated Mermaid code will appear here. You can edit it if needed."
-      ></textarea>
-      {#if syntaxError}
-        <div class="text-error text-sm">
-          <i class="fas fa-exclamation-triangle mr-2"></i>
-          Syntax Error: {syntaxError}
-          <div class="mt-1 text-xs">
-            Please modify the code to fix the syntax error. The diagram will update automatically when the syntax is valid.
-          </div>
-        </div>
-      {/if}
-      <button
-        class="btn btn-secondary w-full"
-        on:click={handlePreview}
-        disabled={!!syntaxError}
-      >
-        Preview
-      </button>
-    </div>
-  {/if}
-</div> 
