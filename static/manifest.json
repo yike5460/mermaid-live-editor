@@ -9,10 +9,10 @@
 		}
 	],
 	"start_url": "/edit",
-	"background_color": "#6366F1",
+	"background_color": "#4f46e5",
 	"display": "standalone",
 	"scope": "/edit",
-	"theme_color": "#6366F1",
+	"theme_color": "#4f46e5",
 	"description": "Online Diagram Editor for creating flowcharts and diagrams.",
 	"orientation": "landscape"
 }
