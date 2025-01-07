@@ -1,6 +1,6 @@
 <script lang="ts">
   interface Props {
-    links: { title: string; href: string }[];
+    links: { title: string; href: string; onClick?: () => void }[];
     label?: string;
     icon?: string;
   }
@@ -16,6 +16,7 @@
     {#if label}
       <span>{label}</span>
     {/if}
+    <slot />
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1792 1792"
@@ -27,15 +28,16 @@
     class="dropdown-content menu top-14 size-fit overflow-y-auto bg-base-200 text-base-content shadow-2xl">
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <ul tabindex="0" class="menu compact p-4">
-      {#each links as { href, title }}
+      {#each links as { href, title, onClick }}
         <li>
           <a
             role="menuitem"
             tabindex="0"
-            class="whitespace-nowrap underline"
+            class="whitespace-nowrap hover:bg-base-300"
             target="_blank"
-            {href}>
-            {title}
+            {href}
+            on:click={onClick}>
+            {@html title}
           </a>
         </li>
       {/each}

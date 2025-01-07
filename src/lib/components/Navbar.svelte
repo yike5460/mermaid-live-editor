@@ -20,8 +20,32 @@
 
   type Links = ComponentProps<typeof DropdownNavMenu>['links'];
 
-  const githubLinks: Links = [
-    { title: 'Repository', href: 'https://github.com/yike5460' }
+  const shareLinks: Links = [
+    { 
+      title: '🐦 Share on Twitter',
+      href: 'https://twitter.com/intent/tweet?text=Check%20out%20Mermaid%20Viz%20-%20A%20tool%20to%20create%20and%20share%20beautiful%20diagrams!%20%23MermaidJS%20%23Visualization&url=' + encodeURIComponent(window.location.origin)
+    },
+    { 
+      title: '💼 Share on LinkedIn',
+      href: 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.origin)
+    },
+    { 
+      title: '👥 Share on Facebook',
+      href: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin)
+    },
+    { 
+      title: '📋 Copy Link',
+      href: '#',
+      onClick: () => { navigator.clipboard.writeText(window.location.href); }
+    }
+  ];
+
+  const quickStartLinks: Links = [
+    { title: '🚀 Getting Started', href: 'https://mermaid.js.org/intro/' },
+    { title: '✨ Examples Gallery', href: 'https://mermaid.js.org/syntax/examples.html' },
+    { title: '🔄 Flowchart Guide', href: 'https://mermaid.js.org/syntax/flowchart.html' },
+    { title: '⚡ Sequence Diagram', href: 'https://mermaid.js.org/syntax/sequenceDiagram.html' },
+    { title: '🧩 Class Diagram', href: 'https://mermaid.js.org/syntax/classDiagram.html' }
   ];
 
   let activePromotion = $state(getActivePromotion());
@@ -119,12 +143,19 @@
     onclick={toggleMenu} />
 
   <div class="hidden w-full lg:flex lg:w-auto lg:items-center" id="menu">
-    <ul class="items-center justify-between pt-4 text-base lg:flex lg:pt-0">
-      <li>
+    <ul class="items-center justify-between gap-4 pt-4 text-base lg:flex lg:pt-0">
+      <li class="flex items-center">
         <Theme />
       </li>
-      <li>
-        <DropdownNavMenu icon="fab fa-github fa-lg" links={githubLinks} />
+      <li class="flex items-center">
+        <DropdownNavMenu icon="fas fa-graduation-cap fa-lg" links={quickStartLinks}>
+          <span class="ml-2 hidden md:inline">Quick Start</span>
+        </DropdownNavMenu>
+      </li>
+      <li class="flex items-center">
+        <DropdownNavMenu icon="fas fa-share-alt fa-lg" links={shareLinks}>
+          <span class="ml-2 hidden md:inline">Share</span>
+        </DropdownNavMenu>
       </li>
     </ul>
   </div>
