@@ -2,6 +2,7 @@ import type { ErrorHash, MarkerData, State, ValidatedState } from '$lib/types';
 import { debounce } from 'lodash-es';
 import type { MermaidConfig } from 'mermaid';
 import { derived, get, writable, type Readable } from 'svelte/store';
+import { replaceState } from '$app/navigation';
 import {
   extractErrorLineText,
   findMostRelevantLineNumber,
@@ -80,15 +81,16 @@ const processState = async (state: State) => {
     processed.error = error as Error;
     errorDebug();
     console.error(error);
-    if ('hash' in error) {
+    if (error && typeof error === 'object' && 'hash' in error) {
       try {
         let errorString = processed.error.toString();
         const errorLineText = extractErrorLineText(errorString);
         const realLineNumber = findMostRelevantLineNumber(errorLineText, activePage.code);
 
         let first_line: number, last_line: number, first_column: number, last_column: number;
+        const errorHash = error as ErrorHash;
         try {
-          ({ first_line, last_line, first_column, last_column } = (error.hash as ErrorHash).loc);
+          ({ first_line, last_line, first_column, last_column } = errorHash.loc);
         } catch {
           const lineNo = findMostRelevantLineNumber(errorString, activePage.code);
           first_line = lineNo;
@@ -135,37 +137,39 @@ export const loadState = (data: string): void => {
     const loadedState = deserializeState(data);
     // Handle migration from old state format to new page-based format
     if ('code' in loadedState || 'mermaid' in loadedState) {
+      const oldState = loadedState as { code?: string; mermaid?: string; } & Partial<State>;
       state = {
         pages: [{
           id: 'default',
           name: 'Main',
-          code: (loadedState as any).code || '',
-          mermaid: (loadedState as any).mermaid || formatJSON({ theme: 'default' })
+          code: oldState.code ?? '',
+          mermaid: oldState.mermaid ?? formatJSON({ theme: 'default' })
         }],
         activePageId: 'default',
-        autoSync: loadedState.autoSync ?? true,
-        rough: loadedState.rough ?? false,
-        updateDiagram: loadedState.updateDiagram ?? true,
-        editorMode: loadedState.editorMode,
-        panZoom: loadedState.panZoom,
-        pan: loadedState.pan,
-        zoom: loadedState.zoom,
-        loader: loadedState.loader
+        autoSync: oldState.autoSync ?? true,
+        rough: oldState.rough ?? false,
+        updateDiagram: oldState.updateDiagram ?? true,
+        editorMode: oldState.editorMode,
+        panZoom: oldState.panZoom,
+        pan: oldState.pan,
+        zoom: oldState.zoom,
+        loader: oldState.loader
       };
     } else {
       state = loadedState;
     }
   } catch (error) {
-    state = {
+    state = data ? {
       ...defaultState,
       pages: [{
         id: 'default',
         name: 'Main',
-        code: data ? urlParseFailedState : defaultState.pages[0].code,
+        code: urlParseFailedState,
         mermaid: defaultState.pages[0].mermaid
       }],
       activePageId: 'default'
-    };
+    } : defaultState;
+
     if (data) {
       console.error('Init error', error);
     }
@@ -220,8 +224,8 @@ export const toggleDarkTheme = (dark: boolean): void => {
 };
 
 export const initURLSubscription = (): void => {
-  const updateHash = debounce((hash) => {
-    history.replaceState(undefined, '', `#${hash}`);
+  const updateHash = debounce((hash: string) => {
+    replaceState(`#${hash}`, { replaceState: true });
   }, 250);
 
   stateStore.subscribe(({ serialized }) => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { updateCodeStore } from '$lib/util/state';
+  import { stateStore, updateCodeStore } from '$lib/util/state';
   import { syncDiagram } from '$lib/util/util';
   import mermaid from 'mermaid';
 
@@ -181,7 +181,14 @@ Please fix the syntax error and return only the corrected code.`,
         const isValid = await validateMermaidSyntax(generatedCode);
 
         if (isValid) {
-          updateCodeStore({ code: generatedCode });
+          const currentState = $stateStore;
+          updateCodeStore({
+            pages: currentState.pages.map(page => 
+              page.id === currentState.activePageId 
+                ? { ...page, code: generatedCode }
+                : page
+            )
+          });
           await syncDiagram();
           if (retryCount > 0) {
             showTemporarySuccessMessage(retryCount - 1);
@@ -223,7 +230,14 @@ ${generatedCode}`;
     // Validate syntax on each change
     const isValid = await validateMermaidSyntax(generatedCode);
     if (isValid) {
-      updateCodeStore({ code: generatedCode });
+      const currentState = $stateStore;
+      updateCodeStore({
+        pages: currentState.pages.map(page => 
+          page.id === currentState.activePageId 
+            ? { ...page, code: generatedCode }
+            : page
+        )
+      });
       await syncDiagram();
     }
   }
