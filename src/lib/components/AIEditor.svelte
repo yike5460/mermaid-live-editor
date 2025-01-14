@@ -183,10 +183,8 @@ Please fix the syntax error and return only the corrected code.`,
         if (isValid) {
           const currentState = $stateStore;
           updateCodeStore({
-            pages: currentState.pages.map(page => 
-              page.id === currentState.activePageId 
-                ? { ...page, code: generatedCode }
-                : page
+            pages: currentState.pages.map((page) =>
+              page.id === currentState.activePageId ? { ...page, code: generatedCode } : page
             )
           });
           await syncDiagram();
@@ -232,10 +230,8 @@ ${generatedCode}`;
     if (isValid) {
       const currentState = $stateStore;
       updateCodeStore({
-        pages: currentState.pages.map(page => 
-          page.id === currentState.activePageId 
-            ? { ...page, code: generatedCode }
-            : page
+        pages: currentState.pages.map((page) =>
+          page.id === currentState.activePageId ? { ...page, code: generatedCode } : page
         )
       });
       await syncDiagram();
@@ -246,6 +242,12 @@ ${generatedCode}`;
     syntaxError = '';
     const isValid = await validateMermaidSyntax(generatedCode);
     if (isValid) {
+      const currentState = $stateStore;
+      updateCodeStore({
+        pages: currentState.pages.map((page) =>
+          page.id === currentState.activePageId ? { ...page, code: generatedCode } : page
+        )
+      });
       await syncDiagram();
     }
   }
