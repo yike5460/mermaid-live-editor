@@ -70,13 +70,13 @@
 
 <div class="flex items-center border-b border-gray-200 dark:border-gray-700 bg-base-200 rounded-t-lg">
   <div class="flex flex-1 overflow-x-auto">
-    {#each $stateStore.pages as page, index}
+    {#each $stateStore.pages as page}
       <div 
         class="group flex items-center h-8 px-3 cursor-pointer border-r border-gray-200 dark:border-gray-700 text-sm {
           page.id === $stateStore.activePageId 
             ? 'bg-base-100 text-primary font-medium' 
             : 'hover:bg-base-100/50'
-        } {index === 0 ? 'rounded-tl-lg' : ''}"
+        }"
         on:click={() => setActivePage(page.id)}
       >
         {#if editingTabId === page.id}
@@ -108,7 +108,7 @@
     {/each}
   </div>
   <button
-    class="h-8 px-3 text-gray-600 dark:text-gray-300 hover:bg-base-100/50 text-sm rounded-tr-lg"
+    class="h-8 px-3 text-gray-600 dark:text-gray-300 hover:bg-base-100/50 text-sm"
     on:click={addNewPage}
   >
     +
