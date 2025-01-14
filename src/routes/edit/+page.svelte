@@ -13,6 +13,7 @@
   import { cmdKey, initHandler, MCBaseURL, syncDiagram } from '$lib/util/util';
   import { onMount } from 'svelte';
   import AIEditor from '$lib/components/AIEditor.svelte';
+  import TabsContainer from '$lib/components/TabsContainer.svelte';
 
   const docURLBase = 'https://mermaid.js.org';
   const docMap: DocumentationConfig = {
@@ -177,7 +178,10 @@
         {#if activeTabID === 'ai'}
           <AIEditor />
         {:else}
-          <Editor />
+          <div class="flex flex-col h-full">
+            <TabsContainer />
+            <Editor />
+          </div>
         {/if}
       </Card>
 

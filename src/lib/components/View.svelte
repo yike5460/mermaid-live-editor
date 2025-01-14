@@ -74,10 +74,17 @@
         }
         outOfSync = false;
         manualUpdate = true;
+
+        const activePage = state.pages.find(p => p.id === state.activePageId);
+        if (!activePage) {
+          console.error("active page doesn't exist");
+          return;
+        }
+
         // Do not render if there is no change in Code/Config/PanZoom
         if (
-          code === state.code &&
-          config === state.mermaid &&
+          code === activePage.code &&
+          config === activePage.mermaid &&
           panZoomEnabled === state.panZoom &&
           rough === state.rough
         ) {
@@ -89,15 +96,15 @@
           return;
         }
 
-        code = state.code;
-        config = state.mermaid;
-        panZoomEnabled = state.panZoom;
+        code = activePage.code;
+        config = activePage.mermaid;
+        panZoomEnabled = state.panZoom ?? false;
         rough = state.rough;
         const scroll = view?.parentElement?.scrollTop;
         delete container.dataset.processed;
         const { svg, bindFunctions } = await renderDiagram(
-          Object.assign({}, JSON.parse(state.mermaid)) as MermaidConfig,
-          code,
+          Object.assign({}, JSON.parse(activePage.mermaid)) as MermaidConfig,
+          activePage.code,
           'graph-div'
         );
 
@@ -140,9 +147,8 @@
       } else if (code !== state.code || config !== state.mermaid) {
         outOfSync = true;
       }
-    } catch (error_) {
-      console.error('view fail', error_);
-      error = true;
+    } catch (error) {
+      console.error('Error rendering diagram:', error);
     }
     const renderTime = Date.now() - startTime;
     saveStatistics({ code, renderTime, isRough: state.rough });

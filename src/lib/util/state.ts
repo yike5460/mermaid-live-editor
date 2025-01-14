@@ -13,16 +13,21 @@ import { deserializeState, serializeState } from './serde';
 import { errorDebug, formatJSON } from './util';
 
 export const defaultState: State = {
-  code: `flowchart TD
+  pages: [{
+    id: 'default',
+    name: 'Main',
+    code: `flowchart TD
     A[Christmas] -->|Get money| B(Go shopping)
     B --> C{Let me think}
     C -->|One| D[Laptop]
     C -->|Two| E[iPhone]
     C -->|Three| F[fa:fa-car Car]
   `,
-  mermaid: formatJSON({
-    theme: 'default'
-  }),
+    mermaid: formatJSON({
+      theme: 'default'
+    })
+  }],
+  activePageId: 'default',
   autoSync: true,
   rough: false,
   updateDiagram: true
@@ -54,6 +59,11 @@ export const currentState: ValidatedState = (() => {
 })();
 
 const processState = async (state: State) => {
+  const activePage = state.pages.find(p => p.id === state.activePageId);
+  if (!activePage) {
+    throw new Error('Active page not found');
+  }
+
   const processed: ValidatedState = {
     ...state,
     serialized: '',
@@ -61,11 +71,11 @@ const processState = async (state: State) => {
     error: undefined,
     editorMode: state.editorMode ?? 'code'
   };
-  // No changes should be done to fields part of `state`.
+
   try {
     processed.serialized = serializeState(state);
-    await parse(state.code);
-    JSON.parse(state.mermaid);
+    await parse(activePage.code);
+    JSON.parse(activePage.mermaid);
   } catch (error) {
     processed.error = error as Error;
     errorDebug();
@@ -74,14 +84,13 @@ const processState = async (state: State) => {
       try {
         let errorString = processed.error.toString();
         const errorLineText = extractErrorLineText(errorString);
-        const realLineNumber = findMostRelevantLineNumber(errorLineText, state.code);
+        const realLineNumber = findMostRelevantLineNumber(errorLineText, activePage.code);
 
         let first_line: number, last_line: number, first_column: number, last_column: number;
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           ({ first_line, last_line, first_column, last_column } = (error.hash as ErrorHash).loc);
         } catch {
-          const lineNo = findMostRelevantLineNumber(errorString, state.code);
+          const lineNo = findMostRelevantLineNumber(errorString, activePage.code);
           first_line = lineNo;
           last_line = lineNo + 1;
           first_column = 0;
@@ -94,7 +103,7 @@ const processState = async (state: State) => {
 
         processed.error = new Error(errorString);
         const marker: MarkerData = {
-          severity: 8, // Error
+          severity: 8,
           startLineNumber: realLineNumber,
           startColumn: first_column,
           endLineNumber: last_line + (realLineNumber - first_line),
@@ -123,74 +132,90 @@ export const loadState = (data: string): void => {
   let state: State;
   console.log(`Loading '${data}'`);
   try {
-    state = deserializeState(data);
-    if (!state.mermaid) {
-      state.mermaid = defaultState.mermaid;
+    const loadedState = deserializeState(data);
+    // Handle migration from old state format to new page-based format
+    if ('code' in loadedState || 'mermaid' in loadedState) {
+      state = {
+        pages: [{
+          id: 'default',
+          name: 'Main',
+          code: (loadedState as any).code || '',
+          mermaid: (loadedState as any).mermaid || formatJSON({ theme: 'default' })
+        }],
+        activePageId: 'default',
+        autoSync: loadedState.autoSync ?? true,
+        rough: loadedState.rough ?? false,
+        updateDiagram: loadedState.updateDiagram ?? true,
+        editorMode: loadedState.editorMode,
+        panZoom: loadedState.panZoom,
+        pan: loadedState.pan,
+        zoom: loadedState.zoom,
+        loader: loadedState.loader
+      };
+    } else {
+      state = loadedState;
     }
-    const mermaidConfig: MermaidConfig =
-      typeof state.mermaid === 'string'
-        ? (JSON.parse(state.mermaid) as MermaidConfig)
-        : state.mermaid;
-    if (
-      mermaidConfig.securityLevel &&
-      mermaidConfig.securityLevel !== 'strict' &&
-      confirm(
-        `Removing "securityLevel":"${mermaidConfig.securityLevel}" from the config for safety.\nClick Cancel if you trust the source of this Diagram.`
-      )
-    ) {
-      delete mermaidConfig.securityLevel; // Prevent setting overriding securityLevel when loading state to mitigate possible XSS attack
-    }
-    state.mermaid = formatJSON(mermaidConfig);
   } catch (error) {
-    state = get(inputStateStore);
+    state = {
+      ...defaultState,
+      pages: [{
+        id: 'default',
+        name: 'Main',
+        code: data ? urlParseFailedState : defaultState.pages[0].code,
+        mermaid: defaultState.pages[0].mermaid
+      }],
+      activePageId: 'default'
+    };
     if (data) {
       console.error('Init error', error);
-      state.code = urlParseFailedState;
-      state.mermaid = defaultState.mermaid;
     }
   }
   updateCodeStore(state);
 };
 
-export const updateCodeStore = (newState: Partial<State>): void => {
-  inputStateStore.update((state) => {
-    return { ...state, ...newState };
-  });
+export const updateCodeStore = (update: Partial<State>): void => {
+  inputStateStore.update((state) => ({ ...state, ...update }));
 };
 
-export const updateCode = (
-  code: string,
-  {
-    updateDiagram = false,
-    resetPanZoom = false
-  }: { updateDiagram?: boolean; resetPanZoom?: boolean } = {}
-): void => {
-  errorDebug();
-
+export const updateCode = (code: string): void => {
   inputStateStore.update((state) => {
-    if (resetPanZoom) {
-      state.pan = undefined;
-      state.zoom = undefined;
-    }
-    return { ...state, code, updateDiagram };
+    const updatedPages = state.pages.map(page =>
+      page.id === state.activePageId
+        ? { ...page, code }
+        : page
+    );
+    return { ...state, pages: updatedPages, updateDiagram: true };
   });
 };
 
 export const updateConfig = (config: string): void => {
-  // console.log('updateConfig', config);
   inputStateStore.update((state) => {
-    return { ...state, mermaid: config };
+    const updatedPages = state.pages.map(page =>
+      page.id === state.activePageId
+        ? { ...page, mermaid: config }
+        : page
+    );
+    return { ...state, pages: updatedPages };
   });
 };
 
 export const toggleDarkTheme = (dark: boolean): void => {
   inputStateStore.update((state) => {
-    const config = JSON.parse(state.mermaid) as MermaidConfig;
+    const activePage = state.pages.find(p => p.id === state.activePageId);
+    if (!activePage) return state;
+
+    const config = JSON.parse(activePage.mermaid) as MermaidConfig;
     if (!config.theme || ['dark', 'default'].includes(config.theme)) {
       config.theme = dark ? 'dark' : 'default';
     }
 
-    return { ...state, mermaid: formatJSON(config) };
+    const updatedPages = state.pages.map(page =>
+      page.id === state.activePageId
+        ? { ...page, mermaid: formatJSON(config) }
+        : page
+    );
+
+    return { ...state, pages: updatedPages };
   });
 };
 

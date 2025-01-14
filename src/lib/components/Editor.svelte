@@ -31,16 +31,20 @@
   };
   let text = '';
 
-  stateStore.subscribe(({ errorMarkers, editorMode, code, mermaid }) => {
-    // console.log('editor store subscription', { code, mermaid });
+  stateStore.subscribe(({ pages, activePageId, errorMarkers, editorMode }) => {
     if (!editor) {
       return;
     }
 
+    const activePage = pages.find(p => p.id === activePageId);
+    if (!activePage) {
+      console.error("active page doesn't exist");
+      return;
+    }
+
     // Update editor text if it's different
-    const newText = editorMode === 'code' ? code : mermaid;
+    const newText = editorMode === 'code' ? activePage.code : activePage.mermaid;
     if (newText !== text) {
-      // console.log('updating editor text', newText);
       editor.setScrollTop(0);
       editor.setValue(newText);
       text = newText;

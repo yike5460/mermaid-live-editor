@@ -18,9 +18,16 @@ export interface Tab {
   icon: string;
 }
 
-export interface State {
+export interface EditorPage {
+  id: string;
+  name: string;
   code: string;
   mermaid: string;
+}
+
+export interface State {
+  pages: EditorPage[];
+  activePageId: string;
   updateDiagram: boolean;
   autoSync: boolean;
   rough: boolean;
