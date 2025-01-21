@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { State, ValidatedState } from '$lib/types';
+  import type { State, ValidatedState, EditorPage } from '$lib/types';
   import { recordRenderTime, shouldRefreshView } from '$lib/util/autoSync';
   import { render as renderDiagram } from '$lib/util/mermaid';
   import { inputStateStore, stateStore, updateCodeStore } from '$lib/util/state';
@@ -9,18 +9,35 @@
   import { onMount } from 'svelte';
   import panzoom from 'svg-pan-zoom';
   import { Svg2Roughjs } from 'svg2roughjs';
+  import { isTouchDevice } from '$lib/util/util';
 
-  let code = '';
-  let config = '';
   let container: HTMLDivElement | undefined = $state();
-  let rough: boolean;
   let view: HTMLDivElement | undefined = $state();
   let error = $state(false);
   let outOfSync = $state(false);
   let hide = $state(false);
   let manualUpdate = true;
-  let panZoomEnabled = $stateStore.panZoom;
+  let panZoomEnabled = $state($stateStore.panZoom);
+  let rough = $state($stateStore.rough);
   let pzoom: typeof panzoom | undefined;
+  let currentCode = $state('');
+  let currentConfig = $state('');
+
+  function updateCurrentPage() {
+    const activePage = $stateStore.pages.find((p) => p.id === $stateStore.activePageId);
+    if (activePage) {
+      currentCode = activePage.code;
+      currentConfig = activePage.mermaid;
+    }
+  }
+
+  $effect(() => {
+    updateCurrentPage();
+  });
+
+  const activePage = $derived($stateStore.pages.find((p) => p.id === $stateStore.activePageId));
+  const code = $derived(activePage?.code ?? '');
+  const config = $derived(activePage?.mermaid ?? '');
 
   const handlePanZoomChange = () => {
     if (!pzoom) {
@@ -75,7 +92,7 @@
         outOfSync = false;
         manualUpdate = true;
 
-        const activePage = state.pages.find(p => p.id === state.activePageId);
+        const activePage = state.pages.find((p) => p.id === state.activePageId);
         if (!activePage) {
           console.error("active page doesn't exist");
           return;
@@ -83,8 +100,8 @@
 
         // Do not render if there is no change in Code/Config/PanZoom
         if (
-          code === activePage.code &&
-          config === activePage.mermaid &&
+          currentCode === activePage.code &&
+          currentConfig === activePage.mermaid &&
           panZoomEnabled === state.panZoom &&
           rough === state.rough
         ) {
@@ -96,8 +113,8 @@
           return;
         }
 
-        code = activePage.code;
-        config = activePage.mermaid;
+        currentCode = activePage.code;
+        currentConfig = activePage.mermaid;
         panZoomEnabled = state.panZoom ?? false;
         rough = state.rough;
         const scroll = view?.parentElement?.scrollTop;
@@ -144,17 +161,74 @@
         error = false;
       } else if (manualUpdate) {
         manualUpdate = false;
-      } else if (code !== state.code || config !== state.mermaid) {
+      } else if (currentCode !== state.code || currentConfig !== state.mermaid) {
         outOfSync = true;
       }
     } catch (error) {
       console.error('Error rendering diagram:', error);
     }
     const renderTime = Date.now() - startTime;
-    saveStatistics({ code, renderTime, isRough: state.rough });
+    saveStatistics({ code: currentCode, renderTime, isRough: state.rough });
     recordRenderTime(renderTime, () => {
       $inputStateStore.updateDiagram = true;
     });
+  };
+
+  const initPanZoom = (graphDiv: HTMLElement) => {
+    if (!graphDiv) return;
+
+    const options: any = {
+      onPan: handlePanZoomChange,
+      onZoom: handlePanZoomChange,
+      controlIconsEnabled: !isTouchDevice(),
+      minZoom: 0.1,
+      maxZoom: 10,
+      zoomScaleSensitivity: 0.4,
+      dblClickZoomEnabled: !isTouchDevice(),
+      preventMouseEventsDefault: true,
+      touchAction: 'none'
+    };
+
+    if (isTouchDevice()) {
+      options.beforePan = () => true;
+      options.beforeZoom = () => true;
+    }
+
+    pzoom = panzoom(graphDiv, options);
+
+    // Restore previous pan/zoom state if available
+    if ($stateStore.pan && $stateStore.zoom) {
+      pzoom.pan($stateStore.pan);
+      pzoom.zoom($stateStore.zoom);
+    }
+  };
+
+  // Handle touch events for mobile
+  const handleTouchStart = (event: TouchEvent) => {
+    if (!panZoomEnabled || event.touches.length !== 2) return;
+    event.preventDefault();
+    const touch1 = event.touches[0];
+    const touch2 = event.touches[1];
+    const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    container?.setAttribute('data-pinch-start', distance.toString());
+  };
+
+  const handleTouchMove = (event: TouchEvent) => {
+    if (!panZoomEnabled || event.touches.length !== 2) return;
+    event.preventDefault();
+    const startDistance = parseFloat(container?.getAttribute('data-pinch-start') || '0');
+    if (!startDistance) return;
+
+    const touch1 = event.touches[0];
+    const touch2 = event.touches[1];
+    const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+
+    const scale = distance / startDistance;
+    if (pzoom) {
+      const currentZoom = pzoom.getZoom();
+      pzoom.zoom(currentZoom * scale);
+      container?.setAttribute('data-pinch-start', distance.toString());
+    }
   };
 
   onMount(() => {
@@ -166,6 +240,18 @@
         pzoom.resize();
       }
     });
+
+    if (container) {
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+      }
+    };
   });
 </script>
 
@@ -182,8 +268,15 @@
   </div>
 {/if}
 
-<div id="view" bind:this={view} class="h-full p-2" class:error class:outOfSync>
-  <div id="container" bind:this={container} class="h-full overflow-auto" class:hide></div>
+<div
+  class="view-container prevent-select"
+  bind:this={container}
+  class:touch-scroll={isTouchDevice()}>
+  <div id="view" bind:this={view}>
+    {#if !hide}
+      <div id="graph-div"></div>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -202,5 +295,31 @@
 
   .hide {
     visibility: hidden;
+  }
+
+  .view-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    touch-action: none;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .view-container {
+      height: calc(100vh - var(--navbar-height));
+    }
+
+    :global(.svg-pan-zoom-control) {
+      transform: scale(1.5);
+      transform-origin: center;
+    }
+  }
+
+  /* Prevent text selection during touch interactions */
+  .prevent-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 </style>

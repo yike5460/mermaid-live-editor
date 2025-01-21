@@ -1,0 +1,79 @@
+/* Base responsive styles */
+:root {
+    --navbar-height: 4rem;
+    --sidebar-width: 300px;
+}
+
+/* Mobile-first base styles */
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Touch-friendly button sizes */
+button,
+.btn,
+[role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 1rem;
+}
+
+/* Responsive containers */
+.container {
+    width: 100%;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 640px) {
+    .hide-mobile {
+        display: none !important;
+    }
+
+    .container {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .hide-tablet {
+        display: none !important;
+    }
+}
+
+/* Desktop breakpoint */
+@media (min-width: 1025px) {
+    .hide-desktop {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+    .touch-scroll {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
+    }
+
+    /* Prevent sticky hover states */
+    *:hover {
+        transition: none !important;
+    }
+}

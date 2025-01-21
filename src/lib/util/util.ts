@@ -44,3 +44,12 @@ export const fetchText = async (url: string): Promise<string> => {
   const res = await fetch(url);
   return res.text();
 };
+
+export const isTouchDevice = (): boolean => {
+  return (
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    // @ts-ignore
+    navigator.msMaxTouchPoints > 0
+  );
+};
