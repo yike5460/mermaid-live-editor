@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import AIEditor from '$lib/components/AIEditor.svelte';
   import TabsContainer from '$lib/components/TabsContainer.svelte';
+  import SEO from '$lib/components/SEO.svelte';
 
   let activeTabID = $state('code');
   stateStore.subscribe(({ editorMode }) => {
@@ -20,7 +21,8 @@
   });
 
   const tabSelectHandler = (tab: Tab) => {
-    const editorMode: EditorMode = tab.id === 'code' ? 'code' : tab.id === 'config' ? 'config' : 'ai';
+    const editorMode: EditorMode =
+      tab.id === 'code' ? 'code' : tab.id === 'config' ? 'config' : 'ai';
     updateCodeStore({ editorMode });
   };
 
@@ -68,6 +70,11 @@
   });
 </script>
 
+<SEO
+  title="Mermaid Editor - Create and Edit Diagrams Online"
+  description="Create, edit and share flowcharts, sequence diagrams, class diagrams, and more using our interactive Mermaid diagram editor. Real-time preview and collaboration features."
+  path="/edit" />
+
 <div class="flex h-full flex-col overflow-hidden">
   <Navbar />
   <div class="flex flex-1 overflow-hidden">
@@ -97,7 +104,7 @@
           </div>
         {/snippet}
 
-        <div class="flex flex-col h-full">
+        <div class="flex h-full flex-col">
           <TabsContainer />
           {#if activeTabID === 'ai'}
             <AIEditor />
@@ -105,7 +112,6 @@
             <Editor />
           {/if}
         </div>
-
       </Card>
 
       <div class="-mt-2">

@@ -21,22 +21,29 @@
   type Links = ComponentProps<typeof DropdownNavMenu>['links'];
 
   const shareLinks: Links = [
-    { 
+    {
       title: '🐦 Share on Twitter',
-      href: 'https://twitter.com/intent/tweet?text=Check%20out%20Mermaid%20Viz%20-%20A%20tool%20to%20create%20and%20share%20beautiful%20diagrams!%20%23MermaidJS%20%23Visualization&url=' + encodeURIComponent(window.location.origin)
+      href:
+        'https://twitter.com/intent/tweet?text=Check%20out%20Mermaid%20Viz%20-%20A%20tool%20to%20create%20and%20share%20beautiful%20diagrams!%20%23MermaidJS%20%23Visualization&url=' +
+        encodeURIComponent(window.location.origin)
     },
-    { 
+    {
       title: '💼 Share on LinkedIn',
-      href: 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.origin)
+      href:
+        'https://www.linkedin.com/sharing/share-offsite/?url=' +
+        encodeURIComponent(window.location.origin)
     },
-    { 
+    {
       title: '👥 Share on Facebook',
-      href: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin)
+      href:
+        'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin)
     },
-    { 
+    {
       title: '📋 Copy Link',
       href: '#',
-      onClick: () => { navigator.clipboard.writeText(window.location.href); }
+      onClick: () => {
+        navigator.clipboard.writeText(window.location.href);
+      }
     }
   ];
 
@@ -88,11 +95,11 @@
 <div class="navbar z-50 bg-primary p-0 shadow-lg">
   <div class="mx-2 flex flex-1 gap-2 px-2">
     <a href="/" class="flex items-center" aria-label="Home">
-      <img src="/favicon.png" alt="Mermaid Viz Logo" class="h-8 w-8" />
+      <img src="/favicon.png" alt="Mermaid Guru Logo" class="h-8 w-8" />
     </a>
     <div class="flex flex-col">
       <div class="flex items-center justify-center gap-2 font-bold">
-        <a href="/" class="text-xl">Mermaid Viz</a>
+        <a href="/" class="text-xl">Mermaid Guru</a>
       </div>
       <div class="text-gradient-animate text-sm font-medium">
         Tool to visualize your Mermaid diagrams
@@ -194,4 +201,3 @@
     }
   }
 </style>
-
